@@ -1,386 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Quiz System</title>
-    <!-- MathJax for rendering math equations/roots -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
-    <style>
-        :root {
-            --primary: #4361ee;
-            --primary-hover: #3a53d0;
-            --bg: #f4f6f8;
-            --card-bg: #ffffff;
-            --text-dark: #2b2d42;
-            --text-muted: #8d99ae;
-            --border: #e0e6ed;
-            --success: #2a9d8f;
-            --danger: #e63946;
-        }
+// questions.js
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg); color: var(--text-dark); }
+// Subject Codes Definition:
+// 1 = Mathematics
+// 2 = Science
+// 3 = Social Science
+// 4 = Reasoning
 
-        .app-container { max-width: 600px; margin: 0 auto; background: var(--card-bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        .screen { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
-        .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+const quizDatabase = {
+    1: { title: "Mathematics", tests: [] },
+    2: { title: "Science", tests: [] },
+    3: { title: "Social Science", tests: [] },
+    4: { title: "Reasoning", tests: [] }
+};
 
-        .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-        .header h2 { font-size: 1.2rem; }
-        .back-btn { background: none; border: none; font-size: 1.5rem; color: var(--text-dark); cursor: pointer; }
-
-        .banner { width: 100%; height: 150px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-        .subject-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .subject-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .subject-card:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 8px 15px rgba(67, 97, 238, 0.1); }
-        .subject-card h3 { font-size: 1.1rem; text-align: center; color: var(--text-dark); }
-
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; }
-        .overlay.active { display: flex; }
-        .popup { background: var(--card-bg); width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 20px; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .test-item { padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .test-item:hover { background: var(--bg); border-color: var(--primary); }
-
-        .timer { font-weight: bold; color: var(--danger); background: #ffeeee; padding: 5px 10px; border-radius: 20px; font-size: 0.9rem; }
-        .question-container { margin-top: 10px; font-size: 1.1rem; line-height: 1.6; }
-        .options-container { margin-top: 20px; }
-        .option { width: 100%; text-align: left; padding: 15px; margin-bottom: 12px; background: white; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-        .option.selected { border-color: var(--primary); background: #f0f4ff; }
-        .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; }
-        .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.2s; }
-        .btn-outline { background: white; border: 1px solid var(--text-muted); color: var(--text-dark); }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-
-        .summary-box { background: var(--bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .summary-box p { margin-bottom: 10px; font-size: 1.1rem; }
-        .processing-bar-container { width: 100%; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; margin-top: 30px; }
-        .processing-bar { width: 0%; height: 100%; background: var(--primary); animation: loadBar 3s linear forwards; }
-        @keyframes loadBar { 0% { width: 0%; } 100% { width: 100%; } }
-
-        .result-card { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%); border: 1px solid var(--border); border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .score-circle { width: 120px; height: 120px; border-radius: 50%; background: white; border: 8px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2rem; font-weight: bold; color: var(--primary); }
-        
-        .review-q-box { background: white; border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .ans-badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem; margin-top: 10px; margin-right: 10px; font-weight: bold; }
-        .badge-user { background: #f0f4ff; color: var(--primary); border: 1px solid var(--primary); }
-        .badge-correct { background: #e6f6f4; color: var(--success); border: 1px solid var(--success); }
-        .badge-wrong { background: #fce8e8; color: var(--danger); border: 1px solid var(--danger); }
-    </style>
-</head>
-<body>
-
-<div class="app-container">
-    
-    <!-- Home Screen -->
-    <div id="screen-home" class="screen active">
-        <div class="banner">Knowledge Hub</div>
-        <h2 style="margin-bottom: 15px; color: var(--text-dark);">Choose Subject</h2>
-        <!-- Subject Codes Passed as Numbers (1, 2, 3, 4) -->
-        <div class="subject-grid">
-            <div class="subject-card" onclick="openSubject(1)"><h3>Mathematics</h3></div>
-            <div class="subject-card" onclick="openSubject(2)"><h3>Science</h3></div>
-            <div class="subject-card" onclick="openSubject(3)"><h3>Social Science</h3></div>
-            <div class="subject-card" onclick="openSubject(4)"><h3>Reasoning</h3></div>
-        </div>
-    </div>
-
-    <!-- Test List Popup -->
-    <div id="test-popup" class="overlay" onclick="closePopup(event)">
-        <div class="popup" id="popup-content" onclick="event.stopPropagation()">
-            <div class="header">
-                <h2 id="popup-title">Available Tests</h2>
-                <button class="back-btn" onclick="goBack()">×</button>
-            </div>
-            <div id="test-list"></div>
-        </div>
-    </div>
-
-    <!-- Quiz Screen -->
-    <div id="screen-quiz" class="screen">
-        <div class="header">
-            <h2 id="quiz-title">Test</h2>
-            <div class="timer" id="timer">00:00</div>
-        </div>
-        <div style="font-weight: bold; color: var(--text-muted); margin-bottom: 10px;" id="q-counter">Question 1/10</div>
-        <div class="question-container" id="question-text"></div>
-        <div class="options-container" id="options-container"></div>
-        <div class="nav-buttons">
-            <button class="btn btn-outline" id="btn-prev" onclick="changeQuestion(-1)">Previous</button>
-            <button class="btn btn-primary" id="btn-next" onclick="changeQuestion(1)">Next</button>
-        </div>
-    </div>
-
-    <!-- Summary Screen -->
-    <div id="screen-summary" class="screen">
-        <div class="header">
-            <button class="back-btn" onclick="goBack()">←</button>
-            <h2>Submission Summary</h2>
-            <div></div>
-        </div>
-        <div class="summary-box">
-            <p><strong>Total Questions:</strong> <span id="sum-total">0</span></p>
-            <p><strong>Attempted:</strong> <span id="sum-attempted">0</span></p>
-            <p><strong>Unattempted:</strong> <span id="sum-unattempted">0</span></p>
-        </div>
-        <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="processSubmission()">Final Submit</button>
-    </div>
-
-    <!-- Processing Screen -->
-    <div id="screen-processing" class="screen">
-        <h2 style="text-align: center; margin-top: 50px;">Calculating Results...</h2>
-        <div class="processing-bar-container">
-            <div class="processing-bar"></div>
-        </div>
-    </div>
-
-    <!-- Result Screen -->
-    <div id="screen-result" class="screen">
-        <div class="header">
-            <button class="back-btn" onclick="goHome()">🏠 Home</button>
-            <h2>Test Result</h2>
-            <div></div>
-        </div>
-        <div class="result-card">
-            <div class="score-circle" id="score-text">0/0</div>
-            <h3 style="margin-bottom: 20px;">Test Completed!</h3>
-            <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="navigate('screen-answers')">View Answers</button>
-        </div>
-    </div>
-
-    <!-- View Answers Screen -->
-    <div id="screen-answers" class="screen">
-        <div class="header">
-            <button class="back-btn" onclick="goBack()">←</button>
-            <h2>Answer Key</h2>
-            <div></div>
-        </div>
-        <div id="review-container"></div>
-    </div>
-
-</div>
-
-<!-- External Questions JS File -->
-<script src="questions.js"></script>
-
-<script>
-    let currentSubjectCode = null;
-    let currentTest = null;
-    let currentQIndex = 0;
-    let userAnswers = [];
-    let timerInterval = null;
-    let timeRemaining = 0;
-    let historyStack = ['screen-home'];
-
-    function renderMath() {
-        if (window.MathJax) {
-            MathJax.typesetPromise().catch((err) => console.log(err));
-        }
-    }
-
-    function navigate(screenId, isBack = false) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('test-popup').classList.remove('active');
-        
-        if (screenId === 'popup') {
-            document.getElementById('screen-home').classList.add('active');
-            document.getElementById('test-popup').classList.add('active');
-        } else {
-            document.getElementById(screenId).classList.add('active');
-        }
-
-        if (!isBack) {
-            historyStack.push(screenId);
-            history.pushState({ screen: screenId }, "");
-        }
-        renderMath();
-    }
-
-    window.addEventListener('popstate', (e) => {
-        if (historyStack.length > 1) {
-            historyStack.pop();
-            let prevScreen = historyStack[historyStack.length - 1];
-            if(prevScreen === 'screen-processing') {
-                goHome();
-                return;
-            }
-            navigate(prevScreen, true);
-        }
-    });
-
-    function goBack() { history.back(); }
-    
-    function goHome() {
-        clearInterval(timerInterval);
-        historyStack = ['screen-home'];
-        history.pushState({ screen: 'screen-home' }, "");
-        navigate('screen-home', true);
-    }
-
-    // Handled using numeric Subject Code
-    function openSubject(subjectCode) {
-        currentSubjectCode = subjectCode;
-        let subjectData = quizDatabase[subjectCode];
-        
-        if (!subjectData) return;
-
-        document.getElementById('popup-title').innerText = subjectData.title + " Tests";
-        let tests = subjectData.tests;
-        
-        let listHtml = "";
-        if (tests.length === 0) {
-            listHtml = "<p style='text-align:center; color:gray; padding:20px 0;'>No tests available yet for this subject.</p>";
-        } else {
-            tests.forEach((test, index) => {
-                listHtml += `<div class="test-item" onclick="startTest(${index})">
-                                <div>
-                                    <strong>${test.title}</strong><br>
-                                    <small style="color:var(--text-muted);">Code: ${test.testId} | ${test.timeMinutes} Mins | ${test.questions.length} Qs</small>
-                                </div>
-                                <div style="color:var(--primary); font-weight:bold;">Start ➔</div>
-                             </div>`;
-            });
-        }
-        document.getElementById('test-list').innerHTML = listHtml;
-        navigate('popup');
-    }
-
-    function closePopup(e) {
-        if (e.target.id === 'test-popup') goBack();
-    }
-
-    function startTest(testIndex) {
-        currentTest = quizDatabase[currentSubjectCode].tests[testIndex];
-        currentQIndex = 0;
-        userAnswers = new Array(currentTest.questions.length).fill(null);
-        
-        document.getElementById('quiz-title').innerText = currentTest.title;
-        navigate('screen-quiz');
-        
-        startTimer(currentTest.timeMinutes);
-        loadQuestion();
-    }
-
-    function startTimer(minutes) {
-        clearInterval(timerInterval);
-        timeRemaining = minutes * 60;
-        updateTimerDisplay();
-        
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            updateTimerDisplay();
-            if (timeRemaining <= 0) {
-                clearInterval(timerInterval);
-                alert("Time is up! Auto-submitting...");
-                showSummary(true);
-            }
-        }, 1000);
-    }
-
-    function updateTimerDisplay() {
-        let m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
-        let s = (timeRemaining % 60).toString().padStart(2, '0');
-        document.getElementById('timer').innerText = `${m}:${s}`;
-    }
-
-    function loadQuestion() {
-        let qData = currentTest.questions[currentQIndex];
-        document.getElementById('q-counter').innerText = `Question ${currentQIndex + 1} / ${currentTest.questions.length}`;
-        document.getElementById('question-text').innerHTML = qData.q;
-        
-        let optionsHtml = "";
-        qData.options.forEach((opt, idx) => {
-            let isSelected = userAnswers[currentQIndex] === idx ? "selected" : "";
-            optionsHtml += `<button class="option ${isSelected}" onclick="selectOption(${idx})">${opt}</button>`;
+/**
+ * ऑटोमेटिक टेस्ट ऐड करने वाला हेल्पर फ़ंक्शन
+ * @param {number} subjectCode - विषय का कोड (1: Math, 2: Science, 3: Social, 4: Reasoning)
+ * @param {string} testCode - चैप्टर या टेस्ट का कोड (उदा: "MTH_CH1_T1")
+ * @param {string} testTitle - टेस्ट का नाम/टाइटल
+ * @param {number} timeMinutes - टेस्ट के लिए टाइमिंग (मिनट में)
+ * @param {Array} questionsArray - प्रश्नों का एरे
+ */
+function addTest(subjectCode, testCode, testTitle, timeMinutes, questionsArray) {
+    if (quizDatabase[subjectCode]) {
+        quizDatabase[subjectCode].tests.push({
+            testId: testCode,
+            title: testTitle,
+            timeMinutes: timeMinutes,
+            questions: questionsArray
         });
-        document.getElementById('options-container').innerHTML = optionsHtml;
-
-        document.getElementById('btn-prev').style.visibility = (currentQIndex === 0) ? "hidden" : "visible";
-        
-        let nextBtn = document.getElementById('btn-next');
-        if (currentQIndex === currentTest.questions.length - 1) {
-            nextBtn.innerText = "Submit";
-            nextBtn.onclick = () => showSummary(false);
-        } else {
-            nextBtn.innerText = "Next";
-            nextBtn.onclick = () => changeQuestion(1);
-        }
-        
-        renderMath();
     }
+}
 
-    function selectOption(idx) {
-        userAnswers[currentQIndex] = idx;
-        let opts = document.querySelectorAll('.option');
-        opts.forEach(el => el.classList.remove('selected'));
-        opts[idx].classList.add('selected');
+
+// =========================================================================
+// 👇 आप नीचे बस इस तरह अपना कोड पेस्ट करते जाएं (Paste Your Tests Below)
+// =========================================================================
+
+// 1. Mathematics (Subject Code: 1)
+addTest(1, "MATH_CH01_T01", "Mock Test 1 (Algebra & Roots)", 15, [
+    {
+        q: "What is the value of \\(\\sqrt{144} + \\sqrt{25}\\)?",
+        options: ["17", "19", "21", "13"],
+        ans: 0
+    },
+    {
+        q: "Solve equation: <code>let x = 10; x += 5;</code> What is x?",
+        options: ["10", "15", "5", "Error"],
+        ans: 1
     }
+]);
 
-    function changeQuestion(step) {
-        currentQIndex += step;
-        loadQuestion();
+addTest(1, "MATH_CH02_T01", "Mock Test 2 (Geometry)", 20, [
+    {
+        q: "What is the area of a circle with radius \\(r\\)?",
+        options: ["\\(2\\pi r\\)", "\\(\\pi r^2\\)", "\\(\\frac{1}{2}\\pi r^2\\)", "\\(\\pi d\\)"],
+        ans: 1
     }
+]);
 
-    function showSummary(autoSubmit = false) {
-        let attempted = userAnswers.filter(a => a !== null).length;
-        document.getElementById('sum-total').innerText = currentTest.questions.length;
-        document.getElementById('sum-attempted').innerText = attempted;
-        document.getElementById('sum-unattempted').innerText = currentTest.questions.length - attempted;
-        
-        if (autoSubmit) {
-            processSubmission();
-        } else {
-            navigate('screen-summary');
-        }
+// 2. Science (Subject Code: 2)
+addTest(2, "SCI_CH01_T01", "Physics Basic Test", 10, [
+    {
+        q: "What is the SI unit of Force?",
+        options: ["Joule", "Newton", "Pascal", "Watt"],
+        ans: 1
     }
+]);
 
-    function processSubmission() {
-        clearInterval(timerInterval);
-        navigate('screen-processing');
-        setTimeout(() => {
-            calculateResult();
-        }, 3000);
-    }
+// 3. Social Science (Subject Code: 3)
+// यहाँ आप Subject Code 3 के लिए पेस्ट करेंगे
 
-    function calculateResult() {
-        let score = 0;
-        let reviewHtml = "";
-
-        currentTest.questions.forEach((qData, i) => {
-            let uAns = userAnswers[i];
-            let isCorrect = (uAns === qData.ans);
-            if (isCorrect) score++;
-
-            let uText = uAns !== null ? qData.options[uAns] : "Not Attempted";
-            let cText = qData.options[qData.ans];
-            
-            let statusBadge = uAns === null ? `<span class="ans-badge badge-wrong">Skipped</span>` 
-                            : (isCorrect ? `<span class="ans-badge badge-correct">Right ✓</span>` 
-                                         : `<span class="ans-badge badge-wrong">Wrong ✗</span>`);
-
-            reviewHtml += `
-                <div class="review-q-box">
-                    <p><strong>Q${i+1}.</strong> ${qData.q}</p>
-                    <div style="margin-top: 10px;">
-                        <span class="ans-badge badge-user">Your Answer: ${uText}</span>
-                        <span class="ans-badge badge-correct">Correct Answer: ${cText}</span>
-                        ${statusBadge}
-                    </div>
-                </div>
-            `;
-        });
-
-        document.getElementById('score-text').innerText = `${score}/${currentTest.questions.length}`;
-        document.getElementById('review-container').innerHTML = reviewHtml;
-        
-        navigate('screen-result');
-    }
-</script>
-
-</body>
-</html>
+// 4. Reasoning (Subject Code: 4)
+// यहाँ आप Subject Code 4 के लिए पेस्ट करेंगे
