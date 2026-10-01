@@ -36,40 +36,31 @@ function addTest(subjectCode, testCode, testTitle, timeMinutes, questionsArray) 
 // =========================================================================
 // 👇 आप नीचे बस इस तरह अपना कोड पेस्ट करते जाएं (Paste Your Tests Below)
 // =========================================================================
-
-// 1. Mathematics (Subject Code: 1)
-addTest(1, "MATH_CH01_T01", "Mock Test 1 (Algebra & Roots)", 15, [
+addTest(1, 6, "Practice 1", 30, [
     {
-        q: "What is the value of \\(\\sqrt{144} + \\sqrt{25}\\)?",
-        options: ["17", "19", "21", "13"],
+        q: "'जूठन' शीर्षक आत्मकथा के लेखक कौन हैं?",
+        options: ["बालकृष्ण भट्ट", "ओमप्रकाश वाल्मीकि", "अज्ञेय", "नामवर सिंह"],
+        ans: 1
+    },
+    {
+        q: "ओमप्रकाश वाल्मीकि का जन्म कब हुआ था?",
+        options: ["30 जून 1950", "20 मई 1948", "15 अगस्त 1952", "10 जनवरी 1945"],
         ans: 0
     },
     {
-        q: "Solve equation: <code>let x = 10; x += 5;</code> What is x?",
-        options: ["10", "15", "5", "Error"],
-        ans: 1
-    }
-]);
-
-addTest(1, "MATH_CH02_T01", "Mock Test 2 (Geometry)", 20, [
+        q: "ओमप्रकाश वाल्मीकि का जन्म-स्थान कहाँ है?",
+        options: ["बरला, मुजफ्फरनगर (उत्तर प्रदेश)", "सिमरिया, बेगूसराय (बिहार)", "जीअनपुर, वाराणसी (उत्तर प्रदेश)", "जमुई (बिहार)"],
+        ans: 0
+    },
     {
-        q: "What is the area of a circle with radius \\(r\\)?",
-        options: ["\\(2\\pi r\\)", "\\(\\pi r^2\\)", "\\(\\frac{1}{2}\\pi r^2\\)", "\\(\\pi d\\)"],
-        ans: 1
-    }
-]);
-
-// 2. Science (Subject Code: 2)
-addTest(2, "SCI_CH01_T01", "Physics Basic Test", 10, [
+        q: "ओमप्रकाश वाल्मीकि की माता का क्या नाम था?",
+        options: ["मकुंदी देवी", "वागेश्वरी देवी", "विद्यावती देवी", "सुभद्रा देवी"],
+        ans: 0
+    },
     {
-        q: "What is the SI unit of Force?",
-        options: ["Joule", "Newton", "Pascal", "Watt"],
-        ans: 1
+        q: "ओमप्रकाश वाल्मीकि के पिता का क्या नाम था?",
+        options: ["छोटनलाल", "नागर सिंह", "महेश्वर सिंह", "रंजीत सिंह"],
+        ans: 0
     }
 ]);
 
-// 3. Social Science (Subject Code: 3)
-// यहाँ आप Subject Code 3 के लिए पेस्ट करेंगे
-
-// 4. Reasoning (Subject Code: 4)
-// यहाँ आप Subject Code 4 के लिए पेस्ट करेंगे
