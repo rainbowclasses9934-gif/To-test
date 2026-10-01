@@ -21,8 +21,35 @@
             --danger: #e63946;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg); color: var(--text-dark); }
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            /* Remove blue tap highlight on mobile */
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        /* Disable pull-to-refresh on mobile browsers */
+        html, body {
+            overscroll-behavior-y: none;
+        }
+
+        body { 
+            background-color: var(--bg); 
+            color: var(--text-dark); 
+            /* Disable text selection on long press */
+            -webkit-user-select: none; 
+            -moz-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none;
+        }
+
+        /* Allow selection and typing ONLY inside input fields */
+        input, textarea {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+        }
 
         .app-container { max-width: 600px; margin: 0 auto; background: var(--card-bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         .screen { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
@@ -75,6 +102,25 @@
         /* Secret Input Styles */
         .secret-input { width: 100%; padding: 12px; font-size: 1rem; border: 2px solid var(--border); border-radius: 8px; margin-bottom: 20px; outline: none; transition: 0.2s; }
         .secret-input:focus { border-color: var(--primary); }
+
+        /* Custom Stylish Alert Popup */
+        #custom-alert-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 999; justify-content: center; align-items: center;
+        }
+        #custom-alert-overlay.active { display: flex; }
+        .custom-alert-box {
+            background: white; padding: 30px 20px; border-radius: 15px; width: 85%; max-width: 320px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 
+            0% { transform: scale(0.8); opacity: 0; } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
+        .custom-alert-box .icon { font-size: 3rem; margin-bottom: 15px; color: var(--danger); }
+        .custom-alert-box h3 { color: var(--text-dark); margin-bottom: 10px; font-size: 1.3rem; }
+        .custom-alert-box p { color: var(--text-muted); margin-bottom: 25px; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -109,11 +155,11 @@
     <div id="secret-popup" class="overlay" onclick="closePopup(event)">
         <div class="popup" onclick="event.stopPropagation()">
             <div class="header">
-                <h2>Enter Code</h2>
+                <h2>Enter Test Code</h2>
                 <button class="back-btn" onclick="goBack()">×</button>
             </div>
             <div style="padding: 10px 0;">
-                <input type="text" id="secret-code-input" class="secret-input" placeholder="Type code here...">
+                <input type="text" id="secret-code-input" class="secret-input" placeholder="Type code here..." autocomplete="off">
                 <button class="btn btn-primary" style="width: 100%;" onclick="checkSecretCode()">Enter</button>
             </div>
         </div>
@@ -181,6 +227,16 @@
         <div id="review-container"></div>
     </div>
 
+    <!-- Custom Alert Overlay -->
+    <div id="custom-alert-overlay" onclick="closeCustomAlert()">
+        <div class="custom-alert-box" onclick="event.stopPropagation()">
+            <div class="icon">⚠️</div>
+            <h3>Invalid Code</h3>
+            <p>The test code you entered is incorrect. Please try again.</p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="closeCustomAlert()">OK</button>
+        </div>
+    </div>
+
 </div>
 
 <!-- External Questions JS File -->
@@ -226,6 +282,14 @@
     }
 
     window.addEventListener('popstate', (e) => {
+        // Handle physical back button correctly even if custom alert is open
+        if (document.getElementById('custom-alert-overlay').classList.contains('active')) {
+            closeCustomAlert();
+            // Prevent actual back navigation when closing alert via back button
+            history.pushState({ screen: historyStack[historyStack.length - 1] }, "");
+            return;
+        }
+
         if (historyStack.length > 1) {
             historyStack.pop();
             let prevScreen = historyStack[historyStack.length - 1];
@@ -295,13 +359,22 @@
         let cleanVal = val.replace(/\s+/g, '').toLowerCase(); 
         
         if (cleanVal === 'ok') {
-            // 👇 यहाँ अपना लिंक डालें (PLACE YOUR LINK HERE) 👇
             window.open("https://rainbowclasses9934-gif.github.io/Teachers-Students-Community/", "_blank"); 
-            
             goBack(); // Close popup after successful entry
         } else {
-            alert("Invalid Code");
+            // Updated to use Custom Stylish Alert
+            showCustomAlert();
         }
+    }
+
+    // Function to show custom alert
+    function showCustomAlert() {
+        document.getElementById('custom-alert-overlay').classList.add('active');
+    }
+
+    // Function to hide custom alert
+    function closeCustomAlert() {
+        document.getElementById('custom-alert-overlay').classList.remove('active');
     }
 
     // Enable 'Enter' key press on keyboard for secret input
@@ -335,6 +408,7 @@
             updateTimerDisplay();
             if (timeRemaining <= 0) {
                 clearInterval(timerInterval);
+                // Keep default alert here or change to custom if needed
                 alert("Time is up! Auto-submitting...");
                 showSummary(true);
             }
